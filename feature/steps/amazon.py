@@ -23,6 +23,9 @@ Locators={"search_box":"twotabsearchtextbox",
           "total_price" : '//span[@id="sc-subtotal-amount-activecart"]'
           }
 '''---------------------------------------------------------------------------------------'''
+amount = []  # ---------------------------------------------empty list to add the amount
+laptops_to_add = []  # -------------------------------------empty list to add the highest rated items
+
 
 @given("the Customer is on the Amazon.in homepage")
 def amazon_login(context):
@@ -38,8 +41,6 @@ def search_for_laptops(context, search_query):
     search_button = context.driver.find_element(By.XPATH,Locators["search_button"])
     search_button.click()
     context.parent_url = context.driver.current_window_handle
-    context.amount = []#---------------------------------------------empty list to add the amount
-    context.laptops_to_add = []#-------------------------------------empty list to add the highest rated items
 
 @then("the Customer adds three highly-rated Dell laptops to the cart")
 def add_laptops_to_cart(context):
@@ -48,11 +49,11 @@ def add_laptops_to_cart(context):
         rating_elements = laptop_element.find_elements(By.CSS_SELECTOR,Locators["rating_review_span_class"] )
         rating = rating_elements[0].get_attribute("innerHTML").split()[0] if rating_elements else "N/A" #to get the texts in the links
         if rating >= "4.0":
-            context.laptops_to_add.append(laptop_element)
+            laptops_to_add.append(laptop_element)
 
             '''to add the highest rated laptops'''
     laptops_added = 0
-    for laptop_link in context.laptops_to_add:
+    for laptop_link in laptops_to_add:
         laptop_link.click()
         time.sleep(2)
         web_link = context.driver.window_handles #------------------contains parent web link
@@ -64,7 +65,7 @@ def add_laptops_to_cart(context):
             wait.until(EC.presence_of_element_located((By.XPATH, Locators["add_to_cart_button"])))
             price_element = context.driver.find_element(By.XPATH,Locators["Price_tag"] ) #----------price webelement of laptop
             p = price_element.get_attribute("innerHTML")#price of laptop
-            context.amount.append(p.replace('<span class="a-price-decimal">.</span>', ""))
+            amount.append(p.replace('<span class="a-price-decimal">.</span>', ""))
             add_to_cart = context.driver.find_element(By.XPATH, Locators["add_to_cart_button"])
             add_to_cart.click()
 
@@ -85,7 +86,7 @@ def price_compare(context):
     final_price = price.text
     final_price = float(final_price.replace(",", ""))
 
-    total_amount = sum(float(x.replace(',', '')) for x in context.amount)
+    total_amount = sum(float(x.replace(',', '')) for x in amount)
 
     assert final_price == total_amount, "Total price in cart does not match with expected."
 
